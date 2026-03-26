@@ -1,48 +1,75 @@
--- [[ ELITE BUILDER V1: DELA MOBILE EDITION ]]
-local DeltaLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = DeltaLib.CreateLib("ELITE BUILDER [DELTA]", "BloodTheme")
+-- [[ ELITE BUILDER V1: BASE TESTING PHASE ]]
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+local Window = OrionLib:MakeWindow({Name = "ELITE TEST [BASES UNLOCKED]", HidePremium = false, SaveConfig = false})
 
--- 🏠 THE BUILD DATABASE
-local Builds = {
-    ["Starter Hut"] = { {"Floor1", 0,0,0,0}, {"Wall1", 10,5,0,90}, {"WallDoor1", 0,5,10,0} },
-    ["Max Sawmill"] = { {"Floor1", 0,0,0,0}, {"Sawmill", 10,2,0,0} }
-}
+-- [ TAB 1: LAND EXPLOITS ]
+local LandTab = Window:MakeTab({
+	Name = "Land & Signs",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
 
--- [ TAB 1: MAIN MENU ]
-local Main = Window:NewTab("Main")
-local BuildSection = Main:NewSection("Construction")
-
-BuildSection:NewDropdown("Select Build", "Choose from your 30 designs", {"Starter Hut", "Max Sawmill"}, function(v)
-    _G.SelectedBuild = v
-end)
-
-BuildSection:NewButton("🚀 Spawn Blueprints", "Places the blue outlines instantly", function()
-    local p = game.Players.LocalPlayer.CurrentProperty.Value
-    if p and _G.SelectedBuild then
-        for _, item in pairs(Builds[_G.SelectedBuild]) do
-            game.ReplicatedStorage.PropertyMethods.PlaceStructure:FireServer(item[1], p.Origin.CFrame * CFrame.new(item[2], item[3], item[4]), p)
-            wait(0.1) -- Delta likes a slightly slower wait to prevent lag
-        end
-    end
-end)
-
--- [ TAB 2: LAND & ADMIN ]
-local Admin = Window:NewTab("Admin")
-local LandSection = Admin:NewSection("Property Tools")
-
-LandSection:NewButton("🌍 Instant Max Land", "Buys all land around you", function()
-    local Property = game.Players.LocalPlayer.CurrentProperty.Value
-    if Property then
-        for x = -2, 2 do
-            for z = -2, 2 do
-                game.ReplicatedStorage.PropertyMethods.BuyLand:FireServer(Property, Property.Origin.Position + Vector3.new(x*40, 0, z*40))
-                wait(0.1)
+LandTab:AddButton({
+	Name = "💸 ATTEMPT FREE MAX LAND",
+	Callback = function()
+        local Property = game.Players.LocalPlayer.CurrentProperty.Value
+        if not Property then return end
+        local Remote = game.ReplicatedStorage.PropertyMethods.BuyLand
+        for x = -3, 3 do
+            for z = -3, 3 do
+                local TargetPos = Property.Origin.Position + Vector3.new(x * 40, 0, z * 40)
+                Remote:FireServer(Property, TargetPos)
+                task.wait(0.05)
             end
         end
-    end
-end)
+	end    
+})
 
--- [ HWID CHECK FOR DELTA ]
--- Note: Delta uses a slightly different HWID string. 
--- When testing, this will show your ID in the console.
-print("Your Delta HWID is: " .. gethwid())
+LandTab:AddButton({
+	Name = "🚫 DELETE ALL SIGNS",
+	Callback = function()
+        for _, v in pairs(game.Workspace.Properties:GetDescendants()) do
+            if v:IsA("Model") and (v.Name:find("Sign") or v.Name:find("Sold")) then
+                game.ReplicatedStorage.PropertyMethods.Demolish:FireServer(v)
+            end
+        end
+	end    
+})
+
+-- [ TAB 2: THE 30 BASES ]
+local BuildTab = Window:MakeTab({
+	Name = "30 Bases",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+-- BASE #1 DATA: LUXURY STARTER
+local LuxuryStarterData = {
+    {"Floor1", Vector3.new(0, 0, 0), 0},
+    {"Floor1", Vector3.new(20, 0, 0), 0},
+    {"Wall1", Vector3.new(10, 5, 20), 0},
+    {"Wall1", Vector3.new(-10, 5, 20), 0},
+    {"WallDoor1", Vector3.new(0, 5, -20), 0},
+    {"Sawmill", Vector3.new(15, 2, 10), 90} -- Example: Adding a sawmill to the base
+}
+
+BuildTab:AddButton({
+	Name = "🏗️ SPAWN BASE #1 (LUXURY STARTER)",
+	Callback = function()
+        local Property = game.Players.LocalPlayer.CurrentProperty.Value
+        if not Property then return end
+        
+        local Remote = game.ReplicatedStorage.PropertyMethods.PlaceStructure
+        OrionLib:MakeNotification({Name = "Building", Content = "Spawning Luxury Starter...", Time = 5})
+
+        for _, item in pairs(LuxuryStarterData) do
+            -- Aligns the base perfectly to your plot's center
+            local TargetCF = Property.Origin.CFrame * CFrame.new(item[2]) * CFrame.Angles(0, math.radians(item[3]), 0)
+            Remote:FireServer(item[1], TargetCF, Property)
+            task.wait(0.1) -- Delta Stability Delay
+        end
+        OrionLib:MakeNotification({Name = "Success", Content = "Base #1 Finished!", Time = 5})
+	end    
+})
+
+OrionLib:Init()
