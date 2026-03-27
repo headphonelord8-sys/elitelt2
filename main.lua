@@ -1,23 +1,20 @@
--- [[ ELITE BUILDER V2: NEON STABILITY BUILD ]]
+-- [[ ELITE LT2 BUILDER V4: REMOTES FIXED ]]
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
 local Holder = Instance.new("ScrollingFrame")
 local UIList = Instance.new("UIListLayout")
 
--- UI DESIGN
+-- UI DESIGN (Neon Red)
 ScreenGui.Parent = game.CoreGui
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.BorderSizePixel = 0
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 MainFrame.Position = UDim2.new(0.5, -115, 0.5, -160)
 MainFrame.Size = UDim2.new(0, 230, 0, 320)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
--- NEON BORDER
-local Glow = Instance.new("Frame")
-Glow.Parent = MainFrame
+local Glow = Instance.new("Frame", MainFrame)
 Glow.Size = UDim2.new(1, 4, 1, 4)
 Glow.Position = UDim2.new(0, -2, 0, -2)
 Glow.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
@@ -25,105 +22,85 @@ Glow.ZIndex = 0
 
 Title.Parent = MainFrame
 Title.Size = UDim2.new(1, 0, 0, 45)
-Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Title.Text = "ELITE BUILDER V2"
+Title.Text = "LT2 ELITE [V4]"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
 
 Holder.Parent = MainFrame
 Holder.Position = UDim2.new(0, 10, 0, 55)
 Holder.Size = UDim2.new(0, 210, 0, 250)
 Holder.BackgroundTransparency = 1
-Holder.ScrollBarThickness = 2
 UIList.Parent = Holder
 UIList.Padding = UDim.new(0, 8)
 
--- [ THE BUG FIX: TRIPLE-THREAT PLOT FINDER ]
-local function findMyPlot()
-    local lp = game.Players.LocalPlayer
-    -- Check via Folder first (Fastest)
-    if lp:FindFirstChild("CurrentProperty") and lp.CurrentProperty.Value then
-        return lp.CurrentProperty.Value
-    end
-    -- Check via Workspace (Deep Scan)
-    for _, folder in pairs(game.Workspace.Properties:GetChildren()) do
-        local owner = folder:FindFirstChild("Owner")
-        if owner and (owner.Value == lp or tostring(owner.Value) == lp.Name) then
-            return folder
+-- [ LT2 SPECIFIC LOGIC ]
+local function getMyProperty()
+    for _, v in pairs(game.Workspace.Properties:GetChildren()) do
+        if v:FindFirstChild("Owner") and v.Owner.Value == game.Players.LocalPlayer then
+            return v
         end
     end
     return nil
 end
 
--- [ PRO BUTTON CREATOR ]
 local function AddButton(name, color, action)
-    local btn = Instance.new("TextButton")
-    btn.Parent = Holder
-    btn.Size = UDim2.new(1, -5, 0, 40)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    local btn = Instance.new("TextButton", Holder)
+    btn.Size = UDim2.new(1, -5, 0, 38)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
     btn.Font = Enum.Font.Gotham
-    btn.TextSize = 14
     btn.BorderSizePixel = 0
-
     btn.MouseButton1Click:Connect(function()
-        local plot = findMyPlot()
-        if not plot then
-            btn.Text = "❌ NO PLOT CLAIMED"
-            btn.TextColor3 = Color3.fromRGB(255, 0, 0)
-            task.wait(1.5)
-            btn.Text = name
-            btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-            return
-        end
-
-        btn.Text = "⚡ EXECUTING..."
-        btn.TextColor3 = color
-        
-        -- Run the logic
-        local success, err = pcall(function()
-            action(plot)
-        end)
-
-        if success then
-            btn.Text = "✅ SUCCESS"
-        else
-            btn.Text = "⚠️ ERROR"
-            warn("Elite Error: " .. tostring(err))
-        end
-
-        task.wait(1.5)
-        btn.Text = name
-        btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        local p = getMyProperty()
+        btn.BackgroundColor3 = color
+        action(p)
+        task.wait(0.3)
+        btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     end)
 end
 
 -- [ BUTTONS ]
-AddButton("FREE MAX LAND", Color3.fromRGB(0, 255, 100), function(p)
-    local remote = game.ReplicatedStorage.PropertyMethods.BuyLand
-    for x = -3, 3 do
-        for z = -3, 3 do
-            local pos = p.Origin.Position + Vector3.new(x*40, 0, z*40)
-            remote:FireServer(p, pos)
+
+-- 1. Buy the first square (Must have $ in-game)
+AddButton("1. BUY START SQUARE", Color3.fromRGB(0, 200, 0), function(p)
+    if p then
+        local pos = p.Origin.Position + Vector3.new(40, 0, 0)
+        game.ReplicatedStorage.PropertyMethods.BuyLand:FireServer(p, pos)
+    end
+end)
+
+-- 2. Expand all at once
+AddButton("2. MAX ALL LAND", Color3.fromRGB(0, 150, 255), function(p)
+    if p then
+        for x = -3, 3 do
+            for z = -3, 3 do
+                local pos = p.Origin.Position + Vector3.new(x*40, 0, z*40)
+                game.ReplicatedStorage.PropertyMethods.BuyLand:FireServer(p, pos)
+                task.wait(0.05)
+            end
         end
     end
 end)
 
-AddButton("CLEAR SOLD SIGNS", Color3.fromRGB(255, 50, 50), function(p)
-    for _, v in pairs(game.Workspace.Properties:GetDescendants()) do
-        if v.Name:find("Sign") then
+-- 3. LT2 Sign Removal (Targeting the actual Sign Model)
+AddButton("3. CLEAR SIGNS", Color3.fromRGB(255, 50, 50), function()
+    for _, v in pairs(game.Workspace:GetDescendants()) do
+        if v.Name == "PropertySign" or v.Name == "SoldSign" then
             game.ReplicatedStorage.PropertyMethods.Demolish:FireServer(v)
         end
     end
 end)
 
-AddButton("SPAWN BASE #1", Color3.fromRGB(0, 150, 255), function(p)
-    local remote = game.ReplicatedStorage.PropertyMethods.PlaceStructure
-    local cf = p.Origin.CFrame
-    remote:FireServer("Floor1", cf, p)
-    remote:FireServer("Sawmill", cf * CFrame.new(0, 2, 0), p)
+-- 4. Spawn Basic Blueprint (Sawmill & Floor)
+AddButton("4. SPAWN BASE #1", Color3.fromRGB(200, 0, 200), function(p)
+    if p then
+        local remote = game.ReplicatedStorage.PropertyMethods.PlaceStructure
+        -- Using standard LT2 internal names
+        remote:FireServer("Floor", p.Origin.CFrame, p)
+        remote:FireServer("Sawmill", p.Origin.CFrame * CFrame.new(0, 2, 10), p)
+    end
 end)
 
-print("🚀 ELITE V2 LOADED SUCCESSFULLY")
+print("🚀 LT2 ELITE V4 LOADED")
