@@ -1,106 +1,224 @@
--- [[ ELITE LT2 BUILDER V4: REMOTES FIXED ]]
-local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
-local Holder = Instance.new("ScrollingFrame")
-local UIList = Instance.new("UIListLayout")
+-- Roblox Lumber Tycoon 2 Script for Delta Executor
+-- Property Finder, Buy Land, Sign Destroyer, Base Spawner
+-- Host on GitHub and use: loadstring(game:HttpGet("YOUR_GITHUB_URL"))()
 
--- UI DESIGN (Neon Red)
-ScreenGui.Parent = game.CoreGui
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-MainFrame.Position = UDim2.new(0.5, -115, 0.5, -160)
-MainFrame.Size = UDim2.new(0, 230, 0, 320)
-MainFrame.Active = true
-MainFrame.Draggable = true
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
-local Glow = Instance.new("Frame", MainFrame)
-Glow.Size = UDim2.new(1, 4, 1, 4)
-Glow.Position = UDim2.new(0, -2, 0, -2)
-Glow.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-Glow.ZIndex = 0
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
-Title.Parent = MainFrame
-Title.Size = UDim2.new(1, 0, 0, 45)
-Title.Text = "LT2 ELITE [V4]"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Title.Font = Enum.Font.GothamBold
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "LT2Tools"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
 
-Holder.Parent = MainFrame
-Holder.Position = UDim2.new(0, 10, 0, 55)
-Holder.Size = UDim2.new(0, 210, 0, 250)
-Holder.BackgroundTransparency = 1
-UIList.Parent = Holder
-UIList.Padding = UDim.new(0, 8)
+-- Main Frame (Draggable)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
 
--- [ LT2 SPECIFIC LOGIC ]
-local function getMyProperty()
-    for _, v in pairs(game.Workspace.Properties:GetChildren()) do
-        if v:FindFirstChild("Owner") and v.Owner.Value == game.Players.LocalPlayer then
-            return v
-        end
-    end
-    return nil
-end
+-- Add corner radius
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = mainFrame
 
-local function AddButton(name, color, action)
-    local btn = Instance.new("TextButton", Holder)
-    btn.Size = UDim2.new(1, -5, 0, 38)
-    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
-    btn.Font = Enum.Font.Gotham
-    btn.BorderSizePixel = 0
-    btn.MouseButton1Click:Connect(function()
-        local p = getMyProperty()
-        btn.BackgroundColor3 = color
-        action(p)
-        task.wait(0.3)
-        btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 40)
+titleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 12)
+titleCorner.Parent = titleBar
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -40, 1, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "LT2 Tools"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Parent = titleBar
+
+-- Scrolling Frame for buttons
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, -20, 1, -60)
+scrollFrame.Position = UDim2.new(0, 10, 0, 50)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.ScrollBarThickness = 8
+scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrame.Parent = mainFrame
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Padding = UDim.new(0, 8)
+listLayout.Parent = scrollFrame
+
+-- Function to create styled button
+local function createButton(text, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -20, 0, 50)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextScaled = true
+    button.Font = Enum.Font.Gotham
+    button.BorderSizePixel = 0
+    button.LayoutOrder = #scrollFrame:GetChildren()
+    button.Parent = scrollFrame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = button
+    
+    local btnStroke = Instance.new("UIStroke")
+    btnStroke.Color = Color3.fromRGB(70, 70, 70)
+    btnStroke.Thickness = 1
+    btnStroke.Parent = button
+    
+    -- Hover effects
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(70, 70, 70)}):Play()
     end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}):Play()
+    end)
+    
+    -- Safe callback with pcall
+    button.MouseButton1Click:Connect(function()
+        pcall(callback)
+    end)
+    
+    -- Update canvas size
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 20)
+    
+    return button
 end
 
--- [ BUTTONS ]
-
--- 1. Buy the first square (Must have $ in-game)
-AddButton("1. BUY START SQUARE", Color3.fromRGB(0, 200, 0), function(p)
-    if p then
-        local pos = p.Origin.Position + Vector3.new(40, 0, 0)
-        game.ReplicatedStorage.PropertyMethods.BuyLand:FireServer(p, pos)
-    end
-end)
-
--- 2. Expand all at once
-AddButton("2. MAX ALL LAND", Color3.fromRGB(0, 150, 255), function(p)
-    if p then
-        for x = -3, 3 do
-            for z = -3, 3 do
-                local pos = p.Origin.Position + Vector3.new(x*40, 0, z*40)
-                game.ReplicatedStorage.PropertyMethods.BuyLand:FireServer(p, pos)
-                task.wait(0.05)
+-- Find Player's Property
+local playerProperty = nil
+local function findProperty()
+    playerProperty = nil
+    pcall(function()
+        for _, prop in pairs(workspace.Properties:GetChildren()) do
+            if prop:FindFirstChild("Owner") and prop.Owner.Value == player then
+                playerProperty = prop
+                break
             end
         end
+    end)
+    return playerProperty
+end
+
+-- 1. Find Property Button
+createButton("🔍 Find My Property", function()
+    local prop = findProperty()
+    if prop then
+        titleLabel.Text = "LT2 Tools - Property Found!"
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(0, 255, 0)}):Play()
+        wait(1)
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        titleLabel.Text = "LT2 Tools"
+    else
+        titleLabel.Text = "LT2 Tools - No Property Found!"
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(255, 100, 100)}):Play()
+        wait(1)
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        titleLabel.Text = "LT2 Tools"
     end
 end)
 
--- 3. LT2 Sign Removal (Targeting the actual Sign Model)
-AddButton("3. CLEAR SIGNS", Color3.fromRGB(255, 50, 50), function()
-    for _, v in pairs(game.Workspace:GetDescendants()) do
-        if v.Name == "PropertySign" or v.Name == "SoldSign" then
-            game.ReplicatedStorage.PropertyMethods.Demolish:FireServer(v)
+-- 2. Buy Land Button (40 stud offset)
+createButton("💰 Buy Land (+40 Studs)", function()
+    local prop = playerProperty or findProperty()
+    if prop then
+        local offsetCFrame = prop.Origin.CFrame + (prop.Origin.CFrame.LookVector * 40)
+        pcall(function()
+            ReplicatedStorage.PropertyMethods.BuyLand:FireServer(offsetCFrame)
+        end)
+        titleLabel.Text = "LT2 Tools - Buy Land Fired!"
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(0, 255, 0)}):Play()
+        wait(1)
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        titleLabel.Text = "LT2 Tools"
+    else
+        titleLabel.Text = "LT2 Tools - Find Property First!"
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(255, 100, 100)}):Play()
+        wait(1)
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        titleLabel.Text = "LT2 Tools"
+    end
+end)
+
+-- 3. Sign Destroyer Button
+createButton("🗑️ Destroy All Signs", function()
+    local count = 0
+    pcall(function()
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if (obj.Name == "PropertySign" or obj.Name == "SoldSign") and obj:IsA("Model") then
+                local demolishRemote = ReplicatedStorage:FindFirstChild("Demolish")
+                if demolishRemote then
+                    demolishRemote:FireServer(obj)
+                    count = count + 1
+                end
+            end
         end
+    end)
+    titleLabel.Text = string.format("LT2 Tools - Destroyed %d Signs!", count)
+    TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(0, 255, 0)}):Play()
+    wait(1.5)
+    TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+    titleLabel.Text = "LT2 Tools"
+end)
+
+-- 4. Base Spawner Button (Floor + Sawmill)
+createButton("🏠 Spawn Base (Floor + Sawmill)", function()
+    local prop = playerProperty or findProperty()
+    if prop and prop:FindFirstChild("Origin") then
+        local originCFrame = prop.Origin.CFrame
+        pcall(function()
+            -- Spawn Floor
+            ReplicatedStorage.PlaceStructure:FireServer("Floor", originCFrame)
+            -- Spawn Sawmill (slight offset to avoid overlap)
+            ReplicatedStorage.PlaceStructure:FireServer("Sawmill", originCFrame + Vector3.new(8, 0, 0))
+        end)
+        titleLabel.Text = "LT2 Tools - Base Spawned!"
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(0, 255, 0)}):Play()
+        wait(1)
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        titleLabel.Text = "LT2 Tools"
+    else
+        titleLabel.Text = "LT2 Tools - Find Property First!"
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(255, 100, 100)}):Play()
+        wait(1)
+        TweenService:Create(titleLabel, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        titleLabel.Text = "LT2 Tools"
     end
 end)
 
--- 4. Spawn Basic Blueprint (Sawmill & Floor)
-AddButton("4. SPAWN BASE #1", Color3.fromRGB(200, 0, 200), function(p)
-    if p then
-        local remote = game.ReplicatedStorage.PropertyMethods.PlaceStructure
-        -- Using standard LT2 internal names
-        remote:FireServer("Floor", p.Origin.CFrame, p)
-        remote:FireServer("Sawmill", p.Origin.CFrame * CFrame.new(0, 2, 10), p)
-    end
+-- Auto-find property on script load
+spawn(function()
+    wait(2)
+    findProperty()
 end)
 
-print("🚀 LT2 ELITE V4 LOADED")
+-- Update canvas size when layout changes
+listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 20)
+end)
+
+print("LT2 Tools loaded successfully! Draggable UI with all features enabled.")
